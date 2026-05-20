@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ARYAN — Product Manager</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --c1:#0a0a0f;--c2:#0d0d1a;--c3:#111127;
+  --accent:#00d4ff;--accent2:#7c3aed;--accent3:#06ffa5;
+  --text:#e8e8f0;--muted:#6b7280;
+  --glass:rgba(255,255,255,0.04);--glassBorder:rgba(255,255,255,0.08);
+}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{background:var(--c1);color:var(--text);font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden;cursor:none}
+
+#cursor{position:fixed;width:12px;height:12px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:transform 0.1s,background 0.2s;mix-blend-mode:screen}
+#cursor-trail{position:fixed;width:40px;height:40px;border:1px solid rgba(0,212,255,0.3);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left 0.12s ease,top 0.12s ease}
+
+#canvas-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.2rem 3rem;display:flex;justify-content:space-between;align-items:center;backdrop-filter:blur(20px);background:rgba(10,10,15,0.6);border-bottom:0.5px solid var(--glassBorder)}
+.nav-logo{font-size:1.1rem;font-weight:600;letter-spacing:0.2em;color:var(--accent);text-transform:uppercase}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:0.78rem;letter-spacing:0.15em;text-transform:uppercase;transition:color 0.3s;position:relative}
+.nav-links a:hover{color:var(--accent)}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent);transition:width 0.3s}
+.nav-links a:hover::after{width:100%}
+.nav-cta{padding:0.5rem 1.2rem;border:1px solid var(--accent);color:var(--accent);font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border-radius:2px;transition:all 0.3s}
+.nav-cta:hover{background:var(--accent);color:var(--c1)}
+
+section{position:relative;z-index:1}
+
+#hero{height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.hero-inner{position:relative;z-index:2}
+.hero-tag{font-size:0.72rem;letter-spacing:0.4em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem;opacity:0}
+.hero-name{font-size:clamp(3.5rem,8vw,7.5rem);font-weight:700;letter-spacing:-0.02em;line-height:1;margin-bottom:0.5rem;opacity:0;background:linear-gradient(135deg,#ffffff 0%,#a0c4ff 50%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-role{font-size:clamp(1rem,2.5vw,1.6rem);font-weight:300;letter-spacing:0.08em;color:rgba(232,232,240,0.7);margin-bottom:2.5rem;opacity:0}
+.hero-cta-group{display:flex;gap:1rem;justify-content:center;opacity:0}
+.btn-primary{padding:0.85rem 2rem;background:var(--accent);color:var(--c1);font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;border:none;cursor:none;border-radius:2px;transition:all 0.3s;text-decoration:none;display:inline-block}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,212,255,0.3)}
+.btn-ghost{padding:0.85rem 2rem;border:1px solid rgba(255,255,255,0.2);color:var(--text);font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;background:transparent;cursor:none;border-radius:2px;transition:all 0.3s;text-decoration:none;display:inline-block}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+.hud-elements{position:absolute;inset:0;pointer-events:none}
+.hud-tl,.hud-tr,.hud-bl,.hud-br{position:absolute;width:60px;height:60px}
+.hud-tl{top:5%;left:5%;border-top:1px solid rgba(0,212,255,0.4);border-left:1px solid rgba(0,212,255,0.4)}
+.hud-tr{top:5%;right:5%;border-top:1px solid rgba(0,212,255,0.4);border-right:1px solid rgba(0,212,255,0.4)}
+.hud-bl{bottom:5%;left:5%;border-bottom:1px solid rgba(0,212,255,0.4);border-left:1px solid rgba(0,212,255,0.4)}
+.hud-br{bottom:5%;right:5%;border-bottom:1px solid rgba(0,212,255,0.4);border-right:1px solid rgba(0,212,255,0.4)}
+.hud-metric{position:absolute;font-size:0.65rem;letter-spacing:0.2em;color:rgba(0,212,255,0.5);font-family:'Courier New',monospace}
+.hud-metric.tl{top:calc(5% + 20px);left:calc(5% + 70px)}
+.hud-metric.tr{top:calc(5% + 20px);right:calc(5% + 70px);text-align:right}
+.hud-metric.bl{bottom:calc(5% + 20px);left:calc(5% + 70px)}
+.hud-metric.br{bottom:calc(5% + 20px);right:calc(5% + 70px);text-align:right}
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scan 4s ease-in-out infinite;opacity:0.2}
+@keyframes scan{0%{top:0}100%{top:100%}}
+
+#about{padding:10rem 3rem;background:linear-gradient(180deg,transparent,rgba(13,13,26,0.8))}
+.section-label{font-size:0.7rem;letter-spacing:0.4em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem}
+.section-title{font-size:clamp(2rem,4vw,3.5rem);font-weight:700;letter-spacing:-0.02em;line-height:1.1;margin-bottom:2rem}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;max-width:1100px;margin:0 auto}
+.about-text{font-size:1.05rem;line-height:1.8;color:rgba(232,232,240,0.75)}
+.about-text p{margin-bottom:1.5rem}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.stat-card{padding:1.5rem;background:var(--glass);border:0.5px solid var(--glassBorder);border-radius:8px;position:relative;overflow:hidden;transition:border-color 0.3s}
+.stat-card:hover{border-color:rgba(0,212,255,0.3)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity 0.3s}
+.stat-card:hover::before{opacity:1}
+.stat-num{font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1}
+.stat-label{font-size:0.75rem;color:var(--muted);letter-spacing:0.1em;margin-top:0.3rem;text-transform:uppercase}
+
+.timeline{margin-top:4rem;max-width:1100px;margin-left:auto;margin-right:auto}
+.tl-item{display:grid;grid-template-columns:auto 1fr;gap:2rem;margin-bottom:3rem;opacity:0;transform:translateX(-20px)}
+.tl-dot-col{display:flex;flex-direction:column;align-items:center;gap:0}
+.tl-dot{width:12px;height:12px;border-radius:50%;background:var(--accent);flex-shrink:0;box-shadow:0 0 12px rgba(0,212,255,0.5);margin-top:4px}
+.tl-line{width:1px;flex:1;background:linear-gradient(180deg,var(--accent),transparent);margin-top:4px;min-height:60px}
+.tl-year{font-size:0.7rem;color:var(--accent);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.3rem}
+.tl-role{font-size:1.1rem;font-weight:600;margin-bottom:0.2rem}
+.tl-co{font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem}
+.tl-desc{font-size:0.9rem;color:rgba(232,232,240,0.65);line-height:1.6}
+
+#skills{padding:8rem 3rem;text-align:center}
+.skills-grid{display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:center;max-width:900px;margin:3rem auto 0}
+.skill-pill{padding:0.6rem 1.4rem;border:0.5px solid var(--glassBorder);border-radius:100px;font-size:0.82rem;letter-spacing:0.05em;background:var(--glass);color:rgba(232,232,240,0.8);transition:all 0.3s;cursor:none;position:relative;overflow:hidden}
+.skill-pill:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,0.05);transform:translateY(-2px)}
+.skill-pill.hot{border-color:rgba(124,58,237,0.5);color:rgba(124,58,237,0.9)}
+.skill-pill.hot:hover{border-color:var(--accent2);background:rgba(124,58,237,0.08)}
+.skill-pill.warm{border-color:rgba(6,255,165,0.3);color:rgba(6,255,165,0.8)}
+.skill-pill.warm:hover{border-color:var(--accent3);background:rgba(6,255,165,0.05)}
+
+#projects{padding:8rem 3rem;max-width:1200px;margin:0 auto}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;margin-top:3rem}
+.project-card{background:var(--glass);border:0.5px solid var(--glassBorder);border-radius:12px;overflow:hidden;transition:all 0.4s;cursor:none;position:relative}
+.project-card:hover{transform:translateY(-8px);border-color:rgba(0,212,255,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.4)}
+.project-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(0,212,255,0.04),transparent 60%);opacity:0;transition:opacity 0.4s;pointer-events:none}
+.project-card:hover::before{opacity:1}
+.project-img{height:180px;display:flex;align-items:center;justify-content:center;font-size:3rem;position:relative;overflow:hidden}
+.project-img::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(10,10,15,0.8))}
+.project-body{padding:1.5rem}
+.project-tag{font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:0.5rem}
+.project-title{font-size:1.15rem;font-weight:600;margin-bottom:0.5rem;line-height:1.3}
+.project-desc{font-size:0.85rem;color:rgba(232,232,240,0.6);line-height:1.6;margin-bottom:1rem}
+.project-metrics{display:flex;gap:1rem}
+.metric{font-size:0.78rem;color:var(--accent3)}
+.metric span{display:block;font-size:1rem;font-weight:700;color:var(--text)}
+
+.pi1{background:linear-gradient(135deg,#0d0d2b,#1a0a2e)}
+.pi2{background:linear-gradient(135deg,#0a1f2b,#0d2b1a)}
+.pi3{background:linear-gradient(135deg,#1a0a0a,#2b1a0a)}
+
+#ai-vision{padding:8rem 3rem;text-align:center;position:relative;overflow:hidden}
+.vision-card{max-width:800px;margin:0 auto;padding:4rem;background:rgba(124,58,237,0.04);border:0.5px solid rgba(124,58,237,0.2);border-radius:16px;position:relative}
+.vision-card::before{content:'';position:absolute;inset:-1px;border-radius:16px;background:linear-gradient(135deg,rgba(0,212,255,0.1),rgba(124,58,237,0.1),rgba(6,255,165,0.05));z-index:-1;filter:blur(20px)}
+.vision-quote{font-size:clamp(1.1rem,2.5vw,1.5rem);font-weight:300;line-height:1.7;color:rgba(232,232,240,0.85);font-style:italic;margin-bottom:2rem}
+.vision-tags{display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center}
+.vtag{padding:0.3rem 0.8rem;background:rgba(124,58,237,0.1);border:0.5px solid rgba(124,58,237,0.3);border-radius:100px;font-size:0.72rem;letter-spacing:0.1em;color:rgba(124,58,237,0.9)}
+
+#contact{padding:8rem 3rem;text-align:center}
+.contact-terminal{max-width:700px;margin:3rem auto;background:#090912;border:0.5px solid rgba(0,212,255,0.2);border-radius:12px;overflow:hidden;font-family:'Courier New',monospace}
+.term-bar{padding:0.8rem 1rem;background:rgba(255,255,255,0.04);display:flex;align-items:center;gap:0.5rem;border-bottom:0.5px solid rgba(255,255,255,0.06)}
+.term-dot{width:10px;height:10px;border-radius:50%}
+.term-title{margin-left:auto;margin-right:auto;font-size:0.72rem;color:var(--muted);letter-spacing:0.1em}
+.term-body{padding:1.5rem}
+.term-line{font-size:0.85rem;line-height:2;color:rgba(232,232,240,0.7)}
+.term-line .prompt{color:var(--accent)}
+.term-line .cmd{color:rgba(232,232,240,0.9)}
+.term-line .out{color:var(--accent3);display:block;padding-left:1.5rem}
+.term-line .link{color:var(--accent);text-decoration:underline}
+.term-cursor{display:inline-block;width:8px;height:14px;background:var(--accent);vertical-align:middle;animation:blink 1s step-end infinite;margin-left:2px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.contact-links{display:flex;gap:1rem;justify-content:center;margin-top:2rem;flex-wrap:wrap}
+.contact-link{padding:0.7rem 1.5rem;border:0.5px solid var(--glassBorder);border-radius:100px;font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text);text-decoration:none;transition:all 0.3s;cursor:none}
+.contact-link:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,0.05)}
+
+footer{padding:2rem 3rem;text-align:center;border-top:0.5px solid var(--glassBorder);font-size:0.75rem;color:var(--muted);letter-spacing:0.1em}
+
+.reveal{opacity:0;transform:translateY(30px);transition:opacity 0.8s ease,transform 0.8s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+.grid-overlay{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.03;background-image:linear-gradient(var(--accent) 1px,transparent 1px),linear-gradient(90deg,var(--accent) 1px,transparent 1px);background-size:60px 60px}
+
+@media(max-width:768px){
+  nav{padding:1rem 1.5rem}
+  .nav-links{display:none}
+  #about{padding:6rem 1.5rem}
+  .about-grid{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  #skills,#projects,#ai-vision,#contact{padding:5rem 1.5rem}
+  .hero-name{font-size:clamp(2.5rem,12vw,4.5rem)}
+  .hud-metric.tl,.hud-metric.tr,.hud-metric.bl,.hud-metric.br{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+<div class="grid-overlay"></div>
+<canvas id="canvas-bg"></canvas>
+
+<nav>
+  <div class="nav-logo">Aryan</div>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#projects">Work</a></li>
+    <li><a href="#ai-vision">Vision</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Let's Talk</a>
+</nav>
+
+<section id="hero">
+  <div class="hud-elements">
+    <div class="hud-tl"></div><div class="hud-tr"></div>
+    <div class="hud-bl"></div><div class="hud-br"></div>
+    <div class="hud-metric tl">SYS.ONLINE // 2025<br>PROD.MGR // ACTIVE</div>
+    <div class="hud-metric tr">NODE: 04.ARY<br>STATUS: BUILDING</div>
+    <div class="hud-metric bl">IMPACT: SCALED<br>FOCUS: HUMAN_FIRST</div>
+    <div class="hud-metric br">VISION: ENABLED<br>CLARITY: 100%</div>
+    <div class="scan-line"></div>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-tag">Product Manager · Visionary · Builder</div>
+    <div class="hero-name">Aryan Shah</div>
+    <div class="hero-role">Turning ambiguity into clarity, ideas into impact</div>
+    <div class="hero-cta-group">
+      <a href="#projects" class="btn-primary">View My Work</a>
+      <a href="#contact" class="btn-ghost">Get In Touch</a>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="about-grid">
+    <div>
+      <div class="section-label reveal">Identity</div>
+      <h2 class="section-title reveal">Wired for<br><span style="color:var(--accent)">complex problems.</span></h2>
+      <div class="about-text reveal">
+        <p>I'm a product manager obsessed with the intersection of human behavior, technology systems, and business strategy. I don't just ship features — I architect outcomes.</p>
+        <p>With experience across 0→1 products, growth-stage scaleups, and enterprise platforms, I bring the rare ability to zoom between the 30,000-foot strategic view and the granular detail of a single user flow — instantly.</p>
+        <p>I believe the best products feel inevitable in hindsight. My job is to make that happen through rigorous discovery, ruthless prioritization, and an unrelenting focus on real user value.</p>
+      </div>
+    </div>
+    <div>
+      <div class="stat-grid reveal">
+        <div class="stat-card"><div class="stat-num">5+</div><div class="stat-label">Years Experience</div></div>
+        <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">Products Shipped</div></div>
+        <div class="stat-card"><div class="stat-num">3M+</div><div class="stat-label">Users Reached</div></div>
+        <div class="stat-card"><div class="stat-num">40%</div><div class="stat-label">Avg. Retention Lift</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <div class="section-label reveal" style="margin-bottom:2rem">Experience</div>
+    <div class="tl-item">
+      <div class="tl-dot-col"><div class="tl-dot"></div><div class="tl-line"></div></div>
+      <div><div class="tl-year">2023 — Present</div><div class="tl-role">Senior Product Manager</div><div class="tl-co">Fintech Startup · Series B</div><div class="tl-desc">Led 0→1 launch of AI-powered expense intelligence product. Drove 40% WAU growth in 6 months. Managed cross-functional team of 14 across eng, design, data.</div></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot-col"><div class="tl-dot"></div><div class="tl-line"></div></div>
+      <div><div class="tl-year">2021 — 2023</div><div class="tl-role">Product Manager</div><div class="tl-co">SaaS Platform · Series C</div><div class="tl-desc">Owned developer platform and API marketplace. Grew third-party integrations 3x. Reduced time-to-first-API-call from 4 days to 47 minutes.</div></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot-col"><div class="tl-dot"></div><div class="tl-line"></div></div>
+      <div><div class="tl-year">2019 — 2021</div><div class="tl-role">Associate Product Manager</div><div class="tl-co">E-commerce · Unicorn</div><div class="tl-desc">Spearheaded checkout optimization initiative resulting in 23% reduction in cart abandonment. Pioneered A/B testing culture across growth team.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="section-label reveal">Capabilities</div>
+  <h2 class="section-title reveal">Engineered for<br><span style="color:var(--accent)">modern product.</span></h2>
+  <div class="skills-grid">
+    <div class="skill-pill hot reveal">Product Strategy</div>
+    <div class="skill-pill reveal">Roadmap Planning</div>
+    <div class="skill-pill hot reveal">0→1 Products</div>
+    <div class="skill-pill warm reveal">User Research</div>
+    <div class="skill-pill reveal">Data Analytics</div>
+    <div class="skill-pill hot reveal">AI Product Design</div>
+    <div class="skill-pill reveal">A/B Testing</div>
+    <div class="skill-pill warm reveal">System Design</div>
+    <div class="skill-pill reveal">OKR Frameworks</div>
+    <div class="skill-pill hot reveal">Growth Strategy</div>
+    <div class="skill-pill reveal">SQL / Looker</div>
+    <div class="skill-pill warm reveal">Figma</div>
+    <div class="skill-pill reveal">Stakeholder Mgmt</div>
+    <div class="skill-pill hot reveal">API Products</div>
+    <div class="skill-pill warm reveal">Platform Thinking</div>
+    <div class="skill-pill reveal">Go-to-Market</div>
+    <div class="skill-pill hot reveal">LLM / GenAI</div>
+    <div class="skill-pill warm reveal">Jobs-to-be-Done</div>
+    <div class="skill-pill reveal">Agile / Scrum</div>
+    <div class="skill-pill reveal">Competitive Intel</div>
+  </div>
+</section>
+
+<section id="projects">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="section-label reveal">Case Studies</div>
+    <h2 class="section-title reveal">Products that<br><span style="color:var(--accent)">moved the needle.</span></h2>
+    <div class="projects-grid">
+      <div class="project-card reveal">
+        <div class="project-img pi1">
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="30" stroke="rgba(0,212,255,0.3)" stroke-width="1"/><circle cx="40" cy="40" r="20" stroke="rgba(0,212,255,0.5)" stroke-width="1"/><circle cx="40" cy="40" r="6" fill="rgba(0,212,255,0.8)"/><line x1="40" y1="10" x2="40" y2="30" stroke="rgba(0,212,255,0.4)" stroke-width="1"/><line x1="40" y1="50" x2="40" y2="70" stroke="rgba(0,212,255,0.4)" stroke-width="1"/><line x1="10" y1="40" x2="30" y2="40" stroke="rgba(0,212,255,0.4)" stroke-width="1"/><line x1="50" y1="40" x2="70" y2="40" stroke="rgba(0,212,255,0.4)" stroke-width="1"/></svg>
+        </div>
+        <div class="project-body">
+          <div class="project-tag">AI · Fintech · 0→1</div>
+          <div class="project-title">Expense Intelligence Engine</div>
+          <div class="project-desc">Built an AI layer that auto-categorized 94% of transactions with contextual insights, saving finance teams 6 hrs/week.</div>
+          <div class="project-metrics">
+            <div class="metric"><span>+40%</span>WAU Growth</div>
+            <div class="metric"><span>94%</span>AI Accuracy</div>
+            <div class="metric"><span>6 hrs</span>Saved/Week</div>
+          </div>
+        </div>
+      </div>
+      <div class="project-card reveal">
+        <div class="project-img pi2">
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none"><rect x="15" y="20" width="50" height="8" rx="2" fill="rgba(6,255,165,0.2)" stroke="rgba(6,255,165,0.4)" stroke-width="0.5"/><rect x="15" y="33" width="35" height="8" rx="2" fill="rgba(6,255,165,0.15)" stroke="rgba(6,255,165,0.3)" stroke-width="0.5"/><rect x="15" y="46" width="42" height="8" rx="2" fill="rgba(6,255,165,0.1)" stroke="rgba(6,255,165,0.2)" stroke-width="0.5"/><rect x="15" y="59" width="25" height="8" rx="2" fill="rgba(6,255,165,0.05)" stroke="rgba(6,255,165,0.15)" stroke-width="0.5"/></svg>
+        </div>
+        <div class="project-body">
+          <div class="project-tag">Developer Platform · API</div>
+          <div class="project-title">Developer Marketplace 2.0</div>
+          <div class="project-desc">Redesigned the API marketplace from scratch, introducing self-serve onboarding and a visual integration builder.</div>
+          <div class="project-metrics">
+            <div class="metric"><span>3x</span>Integrations</div>
+            <div class="metric"><span>47min</span>Time-to-Value</div>
+            <div class="metric"><span>$2M</span>ARR Impact</div>
+          </div>
+        </div>
+      </div>
+      <div class="project-card reveal">
+        <div class="project-img pi3">
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none"><path d="M40 15 L60 30 L60 55 L40 65 L20 55 L20 30 Z" stroke="rgba(255,100,100,0.4)" stroke-width="1" fill="rgba(255,100,100,0.05)"/><circle cx="40" cy="40" r="12" stroke="rgba(255,150,50,0.5)" stroke-width="1" fill="rgba(255,150,50,0.05)"/><circle cx="40" cy="40" r="4" fill="rgba(255,150,50,0.7)"/></svg>
+        </div>
+        <div class="project-body">
+          <div class="project-tag">E-commerce · Growth</div>
+          <div class="project-title">Checkout Conversion Sprint</div>
+          <div class="project-desc">Diagnosed 5 critical friction points in checkout flow. Shipped 12 experiments over 8 weeks. Moved from intuition to data-driven culture.</div>
+          <div class="project-metrics">
+            <div class="metric"><span>-23%</span>Cart Abandon</div>
+            <div class="metric"><span>12</span>Experiments</div>
+            <div class="metric"><span>+$4M</span>Annual Rev</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="ai-vision">
+  <div class="section-label reveal">Perspective</div>
+  <h2 class="section-title reveal">Building for the<br><span style="color:var(--accent2)">AI-native era.</span></h2>
+  <div class="vision-card reveal">
+    <div class="vision-quote">"The next decade of product management isn't about shipping faster — it's about building systems that learn, adapt, and compound value in ways humans alone cannot architect. AI doesn't replace product intuition; it amplifies it exponentially."</div>
+    <div class="vision-tags">
+      <div class="vtag">LLM Product Architecture</div>
+      <div class="vtag">AI Feedback Loops</div>
+      <div class="vtag">Human-AI Collaboration</div>
+      <div class="vtag">Autonomous Workflows</div>
+      <div class="vtag">Emergent User Behavior</div>
+      <div class="vtag">AI Safety UX</div>
+      <div class="vtag">Compounding Systems</div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="section-label reveal">Transmission</div>
+  <h2 class="section-title reveal">Let's build<br><span style="color:var(--accent)">something real.</span></h2>
+  <div class="contact-terminal reveal">
+    <div class="term-bar">
+      <div class="term-dot" style="background:#ff5f57"></div>
+      <div class="term-dot" style="background:#ffbd2e"></div>
+      <div class="term-dot" style="background:#28c940"></div>
+      <div class="term-title">aryan@portfolio ~ contact</div>
+    </div>
+    <div class="term-body">
+      <div class="term-line"><span class="prompt">▸ </span><span class="cmd">whoami</span><span class="out">Senior Product Manager · Available for new opportunities</span></div>
+      <div class="term-line"><span class="prompt">▸ </span><span class="cmd">cat contact.json</span><span class="out">{ "email": "<span class="link">aryan@email.com</span>", "linkedin": "linkedin.com/in/aryanshah" }</span></div>
+      <div class="term-line"><span class="prompt">▸ </span><span class="cmd">echo $response_time</span><span class="out">Within 24 hours. Always.</span></div>
+      <div class="term-line"><span class="prompt">▸ </span><span class="cmd">./initiate_conversation.sh</span><span class="out">Awaiting input...<span class="term-cursor"></span></span></div>
+    </div>
+  </div>
+  <div class="contact-links reveal">
+    <a href="mailto:aryan@email.com" class="contact-link">✉ Email</a>
+    <a href="#" class="contact-link">in LinkedIn</a>
+    <a href="#" class="contact-link">↗ Resume PDF</a>
+    <a href="#" class="contact-link">◎ Twitter / X</a>
+  </div>
+</section>
+
+<footer>
+  <span style="color:var(--accent)">Aryan Shah</span> · Product Manager · Built with intention &amp; ambition · 2025
+</footer>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+const cursor = document.getElementById('cursor');
+const trail = document.getElementById('cursor-trail');
+let mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cursor.style.left=mx+'px';cursor.style.top=my+'px';
+  trail.style.left=mx+'px';trail.style.top=my+'px';
+});
+document.querySelectorAll('a,button,.btn-primary,.btn-ghost,.project-card,.skill-pill,.contact-link,.stat-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cursor.style.transform='translate(-50%,-50%) scale(3)';cursor.style.background='rgba(0,212,255,0.3)'});
+  el.addEventListener('mouseleave',()=>{cursor.style.transform='translate(-50%,-50%) scale(1)';cursor.style.background='var(--accent)'});
+});
+
+const canvas = document.getElementById('canvas-bg');
+const renderer = new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setClearColor(0x000000,0);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+camera.position.z=5;
+
+const particleCount=1200;
+const positions=new Float32Array(particleCount*3);
+const colors=new Float32Array(particleCount*3);
+for(let i=0;i<particleCount;i++){
+  positions[i*3]=(Math.random()-0.5)*20;
+  positions[i*3+1]=(Math.random()-0.5)*20;
+  positions[i*3+2]=(Math.random()-0.5)*20;
+  const r=Math.random();
+  if(r<0.33){colors[i*3]=0;colors[i*3+1]=0.83;colors[i*3+2]=1}
+  else if(r<0.66){colors[i*3]=0.49;colors[i*3+1]=0.23;colors[i*3+2]=0.93}
+  else{colors[i*3]=0.02;colors[i*3+1]=1;colors[i*3+2]=0.65}
+}
+const geo=new THREE.BufferGeometry();
+geo.setAttribute('position',new THREE.BufferAttribute(positions,3));
+geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
+const mat=new THREE.PointsMaterial({size:0.04,vertexColors:true,transparent:true,opacity:0.7});
+const particles=new THREE.Points(geo,mat);
+scene.add(particles);
+
+const ringGeo=new THREE.TorusGeometry(3,0.005,16,200);
+const ringMat=new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:0.12});
+const ring1=new THREE.Mesh(ringGeo,ringMat);ring1.rotation.x=Math.PI/4;scene.add(ring1);
+const ring2=new THREE.Mesh(new THREE.TorusGeometry(4.5,0.003,16,200),new THREE.MeshBasicMaterial({color:0x7c3aed,transparent:true,opacity:0.08}));
+ring2.rotation.x=Math.PI/3;ring2.rotation.y=Math.PI/6;scene.add(ring2);
+
+let mouseX=0,mouseY=0;
+document.addEventListener('mousemove',e=>{mouseX=(e.clientX/window.innerWidth-0.5)*2;mouseY=(e.clientY/window.innerHeight-0.5)*2});
+
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+function animate(){
+  requestAnimationFrame(animate);
+  const t=Date.now()*0.0003;
+  particles.rotation.y=t*0.15;particles.rotation.x=t*0.08;
+  ring1.rotation.z=t*0.3;ring2.rotation.z=-t*0.2;
+  camera.position.x+=(mouseX*0.5-camera.position.x)*0.05;
+  camera.position.y+=(-mouseY*0.5-camera.position.y)*0.05;
+  camera.lookAt(scene.position);
+  renderer.render(scene,camera);
+}
+animate();
+
+gsap.from('.hero-tag',{opacity:0,y:20,duration:1,delay:0.3,ease:'power3.out'});
+gsap.from('.hero-name',{opacity:0,y:40,duration:1.2,delay:0.6,ease:'power3.out'});
+gsap.from('.hero-role',{opacity:0,y:20,duration:1,delay:1,ease:'power3.out'});
+gsap.from('.hero-cta-group',{opacity:0,y:20,duration:1,delay:1.3,ease:'power3.out'});
+gsap.from('.hud-tl',{scaleX:0,transformOrigin:'left top',duration:1.5,delay:1.8,ease:'power3.out'});
+gsap.from('.hud-tr',{scaleX:0,transformOrigin:'right top',duration:1.5,delay:1.9,ease:'power3.out'});
+gsap.from('.hud-bl',{scaleX:0,transformOrigin:'left bottom',duration:1.5,delay:2,ease:'power3.out'});
+gsap.from('.hud-br',{scaleX:0,transformOrigin:'right bottom',duration:1.5,delay:2.1,ease:'power3.out'});
+
+const revealEls=document.querySelectorAll('.reveal');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible')}});
+},{threshold:0.1});
+revealEls.forEach(el=>observer.observe(el));
+
+document.querySelectorAll('.tl-item').forEach((el,i)=>{
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        gsap.to(el,{opacity:1,x:0,duration:0.8,delay:i*0.15,ease:'power3.out'});
+        io.disconnect();
+      }
+    });
+  },{threshold:0.2});
+  io.observe(el);
+});
+
+document.querySelectorAll('.stat-num').forEach(el=>{
+  const target=el.textContent;
+  const num=parseFloat(target.replace(/[^0-9.]/g,''));
+  const suffix=target.replace(/[0-9.]/g,'');
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        gsap.fromTo({v:0},{v:num},{duration:2,ease:'power2.out',onUpdate:function(){
+          el.textContent=(num>100?Math.round(this.targets()[0].v):Math.round(this.targets()[0].v*10)/10)+suffix;
+        }});
+        io.disconnect();
+      }
+    });
+  },{threshold:0.5});
+  io.observe(el);
+});
+</script>
+</body>
+</html>
